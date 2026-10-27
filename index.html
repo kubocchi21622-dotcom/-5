@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>がぞうへんしゅうアプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #fef08a; /* 優しい黄色の背景 */
+        }
+        /* カスタムのローディングスピナー */
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #f59e0b;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .style-btn.selected {
+            border: 4px solid #f59e0b;
+            background-color: #fef3c7;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-6 md:p-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-amber-600 mb-8 flex items-center justify-center gap-3">
+            <span>✨</span> まほうのがぞうへんしゅう <span>✨</span>
+        </h1>
+
+        <!-- ステップ1: 画像のアップロード -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-2xl border-4 border-blue-200">
+            <h2 class="text-2xl font-bold text-blue-700 mb-4">1. がぞうを えらぼう</h2>
+            <input type="file" id="imageInput" accept="image/*" class="hidden">
+            <label for="imageInput" class="cursor-pointer block text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl text-xl transition shadow-lg w-full md:w-2/3 mx-auto">
+                📁 ここをおして がぞうを えらぶ
+            </label>
+            <div id="previewContainer" class="mt-6 hidden flex flex-col items-center">
+                <img id="imagePreview" src="" alt="えらんだがぞう" class="max-h-64 rounded-xl shadow-md border-4 border-white">
+                <p class="text-lg text-gray-600 mt-2 font-bold">この がぞうを へんしゅうするよ！</p>
+            </div>
+        </div>
+
+        <!-- ステップ2: テイストの選択 -->
+        <div id="step2" class="mb-8 p-6 bg-green-50 rounded-2xl border-4 border-green-200 hidden transition-opacity duration-500">
+            <h2 class="text-2xl font-bold text-green-700 mb-4">2. どんな ふうに したい？</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button class="style-btn bg-white border-4 border-gray-200 rounded-xl p-4 text-center font-bold text-lg hover:bg-gray-50 transition shadow-sm" data-style="ポップで元気いっぱいなアニメ風">
+                    <span class="text-3xl block mb-2">🎈</span>ポップ
+                </button>
+                <button class="style-btn bg-white border-4 border-gray-200 rounded-xl p-4 text-center font-bold text-lg hover:bg-gray-50 transition shadow-sm" data-style="やさしい絵本のような水彩画風">
+                    <span class="text-3xl block mb-2">📖</span>やさしい
+                </button>
+                <button class="style-btn bg-white border-4 border-gray-200 rounded-xl p-4 text-center font-bold text-lg hover:bg-gray-50 transition shadow-sm" data-style="シンプルで文字が大きくて見やすいデザイン">
+                    <span class="text-3xl block mb-2">🔍</span>みやすい
+                </button>
+                <button class="style-btn bg-white border-4 border-gray-200 rounded-xl p-4 text-center font-bold text-lg hover:bg-gray-50 transition shadow-sm" data-style="かっこいいゲーム風のイラスト">
+                    <span class="text-3xl block mb-2">⚡</span>かっこいい
+                </button>
+            </div>
+        </div>
+
+        <!-- ステップ3: 実行ボタン -->
+        <div id="step3" class="text-center mb-8 hidden">
+            <button id="generateBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-5 px-10 rounded-full text-3xl transition shadow-[0_6px_0_#d97706] active:shadow-[0_0px_0_#d97706] active:translate-y-[6px]">
+                🪄 へんしゅう スタート！
+            </button>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loading" class="hidden text-center my-8">
+            <div class="loader mb-4"></div>
+            <p class="text-2xl font-bold text-amber-600 animate-pulse">AIが がんばって かいているよ...<br>すこし まってね！</p>
+        </div>
+
+        <!-- 結果表示と追加編集 -->
+        <div id="resultContainer" class="hidden bg-pink-50 p-6 rounded-2xl border-4 border-pink-200 w-full">
+            <h2 class="text-3xl font-bold text-pink-700 mb-6 text-center">✨ かんせい！ ✨</h2>
+            <img id="resultImage" src="" alt="へんしゅうした がぞう" class="w-full max-w-2xl mx-auto rounded-2xl shadow-xl mb-6">
+            
+            <!-- ダウンロードボタンを追加 -->
+            <div class="text-center mb-8">
+                <button id="downloadBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 md:px-12 rounded-full text-xl md:text-2xl transition shadow-[0_6px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-[6px]">
+                    💾 がぞうを ほぞんする
+                </button>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border-2 border-pink-100">
+                <h3 class="text-xl font-bold text-gray-700 mb-3">💬 もっと おねがいする？</h3>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="text" id="extraPrompt" placeholder="例：もっと星をかいて！、色をあかるくして！" class="flex-1 border-4 border-gray-200 rounded-xl p-4 text-lg focus:outline-none focus:border-pink-400">
+                    <button id="extraEditBtn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-8 rounded-xl text-xl transition shadow-[0_4px_0_#be185d] active:shadow-[0_0px_0_#be185d] active:translate-y-[4px] whitespace-nowrap">
+                        やりなおす
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        const styleBtns = document.querySelectorAll('.style-btn');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultImage = document.getElementById('resultImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const extraPromptInput = document.getElementById('extraPrompt');
+        const extraEditBtn = document.getElementById('extraEditBtn');
+
+        let base64ImageData = "";
+        let imageMimeType = "image/jpeg"; // デフォルト
+        let selectedStyle = "";
+        let chatHistory = [];
+        const API_KEY = ""; // 実行環境から自動で補完されます
+
+        // 1. 画像選択時の処理
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // MIMEタイプを保持
+                imageMimeType = file.type || 'image/jpeg';
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imagePreview.src = event.target.result;
+                    // API用に「data:image/...;base64,」の部分を正確に削除
+                    base64ImageData = event.target.result.split(',')[1]; 
+                    
+                    previewContainer.classList.remove('hidden');
+                    step2.classList.remove('hidden');
+                    
+                    // 結果を隠す（やり直し時）
+                    resultContainer.classList.add('hidden');
+                    chatHistory = []; // 履歴リセット
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 2. テイスト選択時の処理
+        styleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 選択状態のリセット
+                styleBtns.forEach(b => b.classList.remove('selected'));
+                // 選択状態の適用
+                btn.classList.add('selected');
+                selectedStyle = btn.getAttribute('data-style');
+                step3.classList.remove('hidden');
+            });
+        });
+
+        // APIを呼び出す関数（Exponential Backoff付き）
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            let retries = 0;
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    if (response.status === 429) {
+                        retries++;
+                        const delay = Math.pow(2, retries) * 1000;
+                        await new Promise(res => setTimeout(res, delay));
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                } catch (error) {
+                    if (retries >= maxRetries - 1) throw error;
+                    retries++;
+                    const delay = Math.pow(2, retries) * 1000;
+                    await new Promise(res => setTimeout(res, delay));
+                }
+            }
+        }
+
+        // 画像編集のメイン処理
+        async function processImage(isExtraEdit = false) {
+            if (!isExtraEdit && !base64ImageData) {
+                alert("がぞうをえらんでね！");
+                return;
+            }
+
+            // UIの切り替え
+            step3.classList.add('hidden');
+            resultContainer.classList.add('hidden');
+            loading.classList.remove('hidden');
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${API_KEY}`;
+            let payload = {};
+
+            if (!isExtraEdit) {
+                // --- 初回の画像編集 (Image-to-Image) ---
+                const initialPrompt = `この画像を見やすく編集してください。文字がある場合は大きく、読みやすい配置に変更してください。内容に合ったイラストを少し付け加えてください。全体のテイストは「${selectedStyle}」にしてください。特別支援学校の中学生が直感的に理解しやすい、シンプルで魅力的な画像にしてください。`;
+                
+                const userTurn = {
+                    role: "user",
+                    parts: [
+                        { text: initialPrompt },
+                        {
+                            inlineData: {
+                                mimeType: imageMimeType,
+                                data: base64ImageData
+                            }
+                        }
+                    ]
+                };
+                
+                chatHistory = [userTurn];
+                
+                payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseModalities: ['IMAGE'], // 安定して画像を返すために'IMAGE'のみ指定
+                        imageConfig: { aspectRatio: "16:9" } // 横型出力を指定
+                    }
+                };
+            } else {
+                // --- 追加の編集 (Multi-turn Image Editing) ---
+                const userExtraPrompt = extraPromptInput.value.trim();
+                if(!userExtraPrompt) {
+                     loading.classList.add('hidden');
+                     resultContainer.classList.remove('hidden');
+                     return;
+                }
+
+                chatHistory.push({
+                    role: "user",
+                    parts: [{ text: userExtraPrompt }]
+                });
+
+                payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseModalities: ['IMAGE'],
+                        imageConfig: { aspectRatio: "16:9" }
+                    }
+                };
+            }
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // APIエラーレスポンスのチェック
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        throw new Error("403 (Permission Denied): APIキーの権限が無いか、Google AI Studioで画像生成モデル(gemini-3.1-flash-image)へのアクセスが制限されています。");
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error.message || "APIエラーが発生しました");
+                }
+
+                // 結果から画像データを抽出
+                const modelContent = result?.candidates?.[0]?.content;
+                const imagePart = modelContent?.parts?.find(p => p.inlineData);
+
+                if (imagePart && imagePart.inlineData?.data) {
+                    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+                    const imageUrl = `data:${mimeType};base64,${imagePart.inlineData.data}`;
+                    resultImage.src = imageUrl;
+                    
+                    // 履歴に追加 (次の追加編集に備える)
+                    if (modelContent) {
+                        chatHistory.push(modelContent);
+                    }
+                    
+                    loading.classList.add('hidden');
+                    resultContainer.classList.remove('hidden');
+                    extraPromptInput.value = ""; // 入力欄をクリア
+                } else {
+                    throw new Error("画像データが受け取れませんでした。もう一度お試しください。");
+                }
+
+            } catch (error) {
+                console.error("Error generating image:", error);
+                loading.classList.add('hidden');
+                // エラー時はステップ3を再表示
+                step3.classList.remove('hidden');
+                
+                // 画面上にわかりやすいエラーを表示
+                const errorMsg = document.createElement('div');
+                errorMsg.className = "bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mt-4 rounded-xl text-lg font-bold text-center shadow-lg";
+                errorMsg.innerHTML = `⚠️ うまく がぞうが つくれなかったよ。<br><span class="text-sm font-normal text-red-600 block mt-1">(${error.message || "ネットワークまたはAPIのエラー"})</span>`;
+                step3.parentNode.insertBefore(errorMsg, step3.nextSibling);
+                setTimeout(() => errorMsg.remove(), 10000);
+            }
+        }
+
+        // ボタンのイベントリスナー
+        generateBtn.addEventListener('click', () => processImage(false));
+        extraEditBtn.addEventListener('click', () => processImage(true));
+
+        // 画像ダウンロードの処理
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = resultImage.src;
+            link.download = 'かんせいがぞう.jpg'; // 保存されるファイル名
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // エンターキーでも追加編集できるようにする
+        extraPromptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                processImage(true);
+            }
+        });
+    </script>
+</body>
+</html>
